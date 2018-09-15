@@ -31,21 +31,22 @@ def train_data_iterator(model_obj):
     batches_of_ids = get_train_batches(model_obj)
     for one_batch_of_ids in batches_of_ids:
 #        print(one_batch_of_ids)
-        data, labels = get_batch_ph_train_data(model_obj, one_batch_of_ids)
+        data, labels, sequence_length = get_batch_ph_train_data(model_obj, one_batch_of_ids)
 #        print(labels)
-        yield (data, labels)
+        yield (data, labels, sequence_length)
 
 def get_batch_ph_train_data(model_obj, one_batch_ids):
     batch_size = model_obj.config.batch_size
-    frames_per_vid = model_obj.config.frames_per_vid
+    max_frames_in_batch, sequence_length = get_max_frames(one_batch_ids, model_obj.train_data)
     frame_dim = model_obj.config.frame_dim
     noOfActivities = model_obj.config.no_of_activities
-    data = np.zeros((batch_size, frames_per_vid, frame_dim))
+    data = -1.0*np.ones((batch_size, max_frames_in_batch, frame_dim))
     labels = np.zeros((batch_size,noOfActivities))
     for i, id in enumerate(one_batch_ids):
-        data[i] = model_obj.train_data[id]
+        frame_len = len(model_obj.train_data[id])
+        data[i][:frame_len] = model_obj.train_data[id]
         labels[i] = model_obj.train_labels[id]
-    return data, labels
+    return data, labels, sequence_length
 
 def get_number_of_objects():
     return len(class2id)
@@ -67,12 +68,13 @@ def parser(file):
         arr.append(intArray[1:])
     return arr
     
-def get_max_frames(parent_dir):
-    max_len = 0
-    for it in ['train/', 'val/', 'test/']:
-        directory = parent_dir + it
-        for file in os.listdir(directory):
-            if not file in ['data', 'labels']: 
-                video = parser(directory+file)
-                max_len = max(max_len, len(video))
-    return max_len
+def get_max_frames(one_batch_ids, train_data):
+    batch = []
+    sequence_length = []
+    for id in one_batch_ids:
+        batch.append(train_data[id])
+        sequence_length.append(len(train_data[id]))
+    mx=0
+    for vid in batch:
+        mx = max(mx, len(vid))
+    return mx, sequence_length

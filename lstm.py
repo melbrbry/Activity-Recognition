@@ -9,13 +9,11 @@ class LSTM_Config(object):
     def __init__(self):
         self.dropout = 0.75
         self.hidden_dim = 400 
-        self.batch_size = 3
+        self.batch_size = 9
         self.lr = 0.001
-#        self.frames_per_vid = ut.get_max_frames('./dataset/')
-        self.frames_per_vid = 70
         self.frame_dim = 39
         self.no_of_activities = 10 
-        self.no_of_layers = 1
+        self.no_of_layers = 2
         self.max_no_of_epochs = 20
         self.model_name = "model_keep=%.2f_batch=%d_hidden_dim=%d_layers=%d" % (self.dropout,
                     self.batch_size, self.hidden_dim,
@@ -69,23 +67,28 @@ class LSTM_Model(object):
                                         shape=[None, self.config.no_of_activities],
                                         name="labels_ph") 
         self.input_ph =  tf.placeholder(tf.float32,
-                                        shape=[None, self.config.frames_per_vid, self.config.frame_dim],
+                                        shape=[None, None, self.config.frame_dim],
                                         name="input_ph")
         self.predictions_ph = tf.placeholder(tf.float32,
                                         shape=[None, self.config.no_of_activities],
                                         name="predictions_ph")
+        self.sequence_length_ph =  tf.placeholder(tf.float32,
+                                        shape=[None],
+                                        name="sequence_length_ph")
         
-    def create_train_feed_dict(self, input_batch, labels_batch, dropout):
+    def create_train_feed_dict(self, input_batch, labels_batch, dropout, sequence_length):
         feed_dict = {}
         feed_dict[self.input_ph] = input_batch
         feed_dict[self.labels_ph] = labels_batch
-        feed_dict[self.dropout_ph] = dropout        
+        feed_dict[self.dropout_ph] = dropout
+        feed_dict[self.sequence_length_ph] = sequence_length
         return feed_dict 
    
-    def create_pred_feed_dict(self, val_data, dropout):
+    def create_pred_feed_dict(self, val_data_inst, dropout, sequence_length):
         feed_dict = {}
-        feed_dict[self.input_ph] = val_data
+        feed_dict[self.input_ph] = np.array([val_data_inst])
         feed_dict[self.dropout_ph] = dropout        
+        feed_dict[self.sequence_length_ph] = sequence_length
         return feed_dict
     
     def create_acc_feed_dict(self, predictions, labels):
@@ -107,9 +110,28 @@ class LSTM_Model(object):
         initial_state = stacked_LSTM_cell.zero_state(tf.shape(self.input_ph)[0],
                     tf.float32)
         outputs, final_state = tf.nn.dynamic_rnn(stacked_LSTM_cell,
-                    self.input_ph, initial_state=initial_state)
-        output = outputs[:,-1,:] 
+                    self.input_ph, initial_state=initial_state, sequence_length=self.sequence_length_ph)
+
+#        padding_frame = tf.constant([0]*self.config.hidden_dim)
         
+        
+#        output = np.zeros((tf.shape(outputs)[0], 1, tf.shape(outputs)[2]))
+#        for i in range(tf.shape(self.input_ph)[0]):
+#            last = 0
+#            for j  in range(tf.shape(self.input_ph)[1]):
+#                 if tf.equal(outputs[:][j], padding_frame):
+#                     break
+#                 last = j
+#            outputs[i][0] = outputs[i][last]
+#        print(final_state)
+        lstm_h = final_state[0].h
+#        print(lstm_h)
+        
+        output = lstm_h
+        self.output = lstm_h
+#        for i in range(self.config.batch_size):
+#            if tf.equal(padding_frame, output):
+#                counter
 #        print("outputs", outputs, "output", output)
         output = tf.reshape(output, [-1, self.config.hidden_dim])
 
@@ -139,20 +161,24 @@ class LSTM_Model(object):
         
     def run_epoch(self, session):
         batch_losses = []
-        for step, (data_batch, labels_batch) in enumerate(ut.train_data_iterator(self)):
-#            print(step)
-#            print("data batch \n", [i+1 for i in range(len(data._batch[0][0])) if data_batch[0][0][i]==1])
-#            print("labels batch \n", labels_batch[0])
+        for step, (data_batch, labels_batch, sequence_length) in enumerate(ut.train_data_iterator(self)):
+#            print("total len:", len(data_batch))
             feed_dict = self.create_train_feed_dict(data_batch,
-                                              labels_batch, self.config.dropout)
+                                              labels_batch, self.config.dropout, sequence_length)
             
-            batch_loss, _ = session.run([self.loss, self.train_op],
+            output, batch_loss, _ = session.run([self.output, self.loss, self.train_op],
                                         feed_dict=feed_dict)
+            
+#            if step==0:
+#                for it in output:
+#                    print("new output")
+#                    print(it)
             batch_losses.append(batch_loss)
         return batch_losses
  
-    def predict_activities(self, session, val_data):
-        feed_dict = self.create_pred_feed_dict(val_data, self.config.dropout)
+    def predict_activities(self, session, val_data_inst):
+        sequence_length = [len(val_data_inst)]
+        feed_dict = self.create_pred_feed_dict(val_data_inst, self.config.dropout, sequence_length)
         prediction = session.run(self.predict_op, feed_dict=feed_dict)
         return prediction
     
@@ -160,11 +186,14 @@ class LSTM_Model(object):
         val_data = np.array(self.val_data)
         val_labels = np.array(self.val_labels)
         print("true labels ", val_labels)
-        predictions = self.predict_activities(session, val_data)
-        print("predictions ", predictions)
-#        feed_dict = self.create_acc_feed_dict(predictions, val_labels)
-#        accuracy = session.run(self.accuracy_op, feed_dict=feed_dict)
-        accuracy = 0
+        predictions = []
+        for val_data_inst in val_data:
+            prediction = self.predict_activities(session, val_data_inst)
+            predictions.append(list(prediction[0]))
+        print("predictions ", list(predictions))
+        feed_dict = self.create_acc_feed_dict(predictions, val_labels)
+        accuracy = session.run(self.accuracy_op, feed_dict=feed_dict)
+#        accuracy = 0
         return accuracy
 
 def main():    

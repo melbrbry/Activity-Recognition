@@ -44,9 +44,9 @@ def collect_and_reformat(directory, maxFrames):
             video = ut.parser(directory+file)
             video = to_hot(video)
 #            video = pad(video, maxFrames)
-            video = turncate(video)
+#            video = turncate(video)
             videos.append(video)
-            print(file)
+#            print(file)
             
     desFile = directory + 'data'
     with open(desFile, 'wb') as filehandle:  
@@ -69,7 +69,7 @@ def collect_labels(directory):
                 for vid in os.listdir(videos_path+subDir):
                     if vid == file:
                         labels.append(class2id[subDir])
-                        print("class: ", subDir)
+#                        print("class: ", subDir)
                         flag = True
             if not flag:
                 print("Vid not found!")

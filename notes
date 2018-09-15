@@ -1,7 +1,7 @@
 LSTM
 
-1. pad to the max length in the batch (not in the whole dataset)
-2. use sequence length in RNN.
+1. pad to the max length in the batch (not in the whole dataset) ---> DONE
+2. use sequence length in RNN.					 ---> DONE
 3. use the last non-zero output for the LSTM.
 4. check whether you need to change the loss function.
 5. implement the accuracy part. 
