@@ -9,10 +9,10 @@ class LSTM_Config(object):
     def __init__(self):
         self.dropout = 0.75
         self.hidden_dim = 400 
-        self.batch_size = 3
+        self.batch_size = 2
         self.lr = 0.001
 #        self.frames_per_vid = ut.get_max_frames('./dataset/')
-        self.frames_per_vid = 70
+#        self.frames_per_vid = 70
         self.frame_dim = 39
         self.no_of_activities = 10 
         self.no_of_layers = 1
@@ -69,7 +69,7 @@ class LSTM_Model(object):
                                         shape=[None, self.config.no_of_activities],
                                         name="labels_ph") 
         self.input_ph =  tf.placeholder(tf.float32,
-                                        shape=[None, self.config.frames_per_vid, self.config.frame_dim],
+                                        shape=[None, None, self.config.frame_dim],
                                         name="input_ph")
         self.predictions_ph = tf.placeholder(tf.float32,
                                         shape=[None, self.config.no_of_activities],
@@ -82,9 +82,9 @@ class LSTM_Model(object):
         feed_dict[self.dropout_ph] = dropout        
         return feed_dict 
    
-    def create_pred_feed_dict(self, val_data, dropout):
+    def create_pred_feed_dict(self, val_data_inst, dropout):
         feed_dict = {}
-        feed_dict[self.input_ph] = val_data
+        feed_dict[self.input_ph] = [val_data_inst]
         feed_dict[self.dropout_ph] = dropout        
         return feed_dict
     
@@ -151,8 +151,8 @@ class LSTM_Model(object):
             batch_losses.append(batch_loss)
         return batch_losses
  
-    def predict_activities(self, session, val_data):
-        feed_dict = self.create_pred_feed_dict(val_data, self.config.dropout)
+    def predict_activities(self, session, val_data_inst):
+        feed_dict = self.create_pred_feed_dict(val_data_inst, self.config.dropout)
         prediction = session.run(self.predict_op, feed_dict=feed_dict)
         return prediction
     
@@ -160,13 +160,15 @@ class LSTM_Model(object):
         val_data = np.array(self.val_data)
         val_labels = np.array(self.val_labels)
         print("true labels ", val_labels)
-        predictions = self.predict_activities(session, val_data)
-        print("predictions ", predictions)
-#        feed_dict = self.create_acc_feed_dict(predictions, val_labels)
-#        accuracy = session.run(self.accuracy_op, feed_dict=feed_dict)
-        accuracy = 0
+        predictions = []
+        for val_data_inst in val_data:
+            prediction = self.predict_activities(session, val_data_inst)
+            predictions.append(list(prediction[0]))
+        print("predictions ", list(predictions))
+        feed_dict = self.create_acc_feed_dict(predictions, val_labels)
+        accuracy = session.run(self.accuracy_op, feed_dict=feed_dict)
+#        accuracy = 0
         return accuracy
-
 def main():    
     tf.reset_default_graph()
     config = LSTM_Config()

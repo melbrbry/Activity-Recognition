@@ -37,16 +37,16 @@ def pad(arr, maxFrames):
 def turncate(arr, minFrames=70):
     return arr[:minFrames]
     
-def collect_and_reformat(directory, maxFrames):
+def collect_and_reformat(directory):
     videos = []
     for file in os.listdir(directory):
         if not file in ['data', 'labels']:
             video = ut.parser(directory+file)
             video = to_hot(video)
 #            video = pad(video, maxFrames)
-            video = turncate(video)
+#            video = turncate(video)
             videos.append(video)
-            print(file)
+#            print(file)
             
     desFile = directory + 'data'
     with open(desFile, 'wb') as filehandle:  
@@ -69,7 +69,7 @@ def collect_labels(directory):
                 for vid in os.listdir(videos_path+subDir):
                     if vid == file:
                         labels.append(class2id[subDir])
-                        print("class: ", subDir)
+#                        print("class: ", subDir)
                         flag = True
             if not flag:
                 print("Vid not found!")
@@ -79,10 +79,9 @@ def collect_labels(directory):
         pickle.dump(labels, filehandle)
                          
 def main():
-    maxFrames = ut.get_max_frames("./dataset/")
-    collect_and_reformat("./dataset/train/", maxFrames)
-    collect_and_reformat("./dataset/val/", maxFrames)
-    collect_and_reformat("./dataset/test/", maxFrames)
+    collect_and_reformat("./dataset/train/")
+    collect_and_reformat("./dataset/val/")
+    collect_and_reformat("./dataset/test/")
     collect_labels("./dataset/train/")
     collect_labels("./dataset/val/")
     collect_labels("./dataset/test/")
