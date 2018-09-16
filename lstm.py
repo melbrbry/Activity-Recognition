@@ -14,11 +14,14 @@ class LSTM_Config(object):
         self.frame_dim = 39
         self.no_of_activities = 3
         self.no_of_layers = 1
-        self.max_no_of_epochs = 20
+        self.min_no_of_epochs = 20
+        self.max_no_of_epochs = 100
         self.model_name = "model_keep=%.2f_batch=%d_hidden_dim=%d_layers=%d" % (self.dropout,
                     self.batch_size, self.hidden_dim,
                     self.no_of_layers)
         self.model_dir = "models/%s" % self.model_name
+        self.eval_criteria = "loss"
+        self.patience = 10
 
 class LSTM_Model(object):
 
@@ -80,7 +83,7 @@ class LSTM_Model(object):
                                         shape=[None],
                                         name="sequence_length_ph")
         
-    def create_train_feed_dict(self, input_batch, labels_batch, dropout, sequence_length):
+    def create_feed_dict(self, input_batch, labels_batch, dropout, sequence_length):
         feed_dict = {}
         feed_dict[self.input_ph] = input_batch
         feed_dict[self.labels_ph] = labels_batch
@@ -145,7 +148,7 @@ class LSTM_Model(object):
     def run_epoch(self, session):
         batch_losses = []
         for step, (data_batch, labels_batch, sequence_length) in enumerate(ut.train_data_iterator(self)):
-            feed_dict = self.create_train_feed_dict(data_batch,
+            feed_dict = self.create_feed_dict(data_batch,
                                               labels_batch, self.config.dropout, sequence_length)
             batch_loss, _ = session.run([self.loss, self.train_op],
                                         feed_dict=feed_dict)
@@ -177,29 +180,58 @@ class LSTM_Model(object):
         feed_dict = self.create_acc_feed_dict(predictions, labels[:no_of_instances])
         accuracy = session.run(self.accuracy_op, feed_dict=feed_dict)
         return accuracy
-
+    
+    def early_stopping(self, val_scores, best_val_score, metric, patience):
+        val_scores.reverse()
+        tolerance = 1e-3
+        for step, score in enumerate(val_scores):
+            if step < patience:
+                if metric == "loss":
+                    if score - tolerance < best_val_score:
+                        return False
+                if metric == "accuracy":
+                    if score >= best_val_score:
+                        return False
+        return True
+            
+    def compute_val_loss(self, session):
+        val_ids = [i for i in range(len(self.val_data))]
+        data, labels, sequence_length = ut.get_batch_ph_data(self, val_ids, "val")
+        feed_dict = self.create_feed_dict(data, labels, self.config.dropout, sequence_length)
+        val_loss = session.run(self.loss, feed_dict=feed_dict)
+        return val_loss
+         
 def main():    
     tf.reset_default_graph()
     config = LSTM_Config()
     model = LSTM_Model(config)
-#    saver = tf.train.Saver()
+    saver = tf.train.Saver(max_to_keep=model.config.max_no_of_epochs)
     
     with tf.Session() as sess:
         init_g = tf.global_variables_initializer()
         init_l = tf.local_variables_initializer()
         sess.run(init_g)
         sess.run(init_l)
-        epochs_losses, train_accuracies, val_accuracies = [], [], []
+        train_epochs_losses, val_epochs_losses, train_accuracies, val_accuracies = [], [], [], []
+        best_val_accuracy = 0
+        best_val_loss = float("INF")
         for epoch in range(config.max_no_of_epochs):
             print("epoch: %d/%d" % (epoch+1, config.max_no_of_epochs))
             ut.log("epoch: %d/%d" % (epoch+1, config.max_no_of_epochs))
             batch_losses = model.run_epoch(sess)
             epoch_loss = np.mean(batch_losses)
-            print("loss = %f" % (epoch_loss))
-            ut.log("loss = %f" % (epoch_loss))
-            epochs_losses.append(epoch_loss)
-            pickle.dump(epochs_losses, open("%s/losses/epochs_losses"\
+            val_epoch_loss = model.compute_val_loss(sess)
+            print("train loss = %f | val loss = %f" % (epoch_loss, val_epoch_loss))
+            ut.log("train loss = %f | val loss = %f" % (epoch_loss, val_epoch_loss))
+            train_epochs_losses.append(epoch_loss)
+            pickle.dump(train_epochs_losses, open("%s/losses/train_epochs_losses"\
                         % model.config.model_dir, "wb"))
+            val_epochs_losses.append(val_epoch_loss)
+#            print("before plotting")
+#            print(val_epochs_losses)
+            pickle.dump(val_epochs_losses, open("%s/losses/val_epochs_losses"\
+                        % model.config.model_dir, "wb"))
+            
             train_accuracy = model.compute_accuracy(sess, mode='train') 
             val_accuracy = model.compute_accuracy(sess, mode='val')
             print("train accuracy = %f | val accuracy = %f" % (train_accuracy, val_accuracy))
@@ -211,8 +243,26 @@ def main():
             pickle.dump(val_accuracies, open("%s/metrics/val_accuracies"\
                         % model.config.model_dir, "wb"))
             
-        
-#        saver.save(sess, "%s/weights/model" % model.config.model_dir)        
+            if model.config.eval_criteria == "accuracy":
+                    if val_accuracy > best_val_accuracy:
+                        saver.save(sess, "%s/weights/model-epoch-%d" % (model.config.model_dir, epoch+1))
+                        best_val_accuracy = val_accuracy
+                    if epoch > model.config.min_no_of_epochs:
+                        if model.early_stopping(val_accuracies, best_val_accuracy,\
+                                            model.config.patience, model.config.eval_criteria):
+                                break
+            
+            if model.config.eval_criteria == "loss":
+                    if val_epoch_loss < best_val_loss:
+                        saver.save(sess, "%s/weights/model-epoch-%d" % (model.config.model_dir, epoch+1))
+                        best_val_loss = val_epoch_loss
+                        print("best_val_loss", best_val_loss)
+                    if epoch > model.config.min_no_of_epochs:
+                        if model.early_stopping(val_epochs_losses, best_val_loss,\
+                                            model.config.eval_criteria, model.config.patience):
+                                break
+                    
+            
         test_accuracy = model.compute_accuracy(sess, mode='test')
         print("test accuracy = %f" % (test_accuracy))
         ut.log("test accuracy = %f" % (test_accuracy))

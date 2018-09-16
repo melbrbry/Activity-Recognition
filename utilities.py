@@ -33,21 +33,27 @@ def train_data_iterator(model_obj):
     batches_of_ids = get_train_batches(model_obj)
     for one_batch_of_ids in batches_of_ids:
 #        print(one_batch_of_ids)
-        data, labels, sequence_length = get_batch_ph_train_data(model_obj, one_batch_of_ids)
+        data, labels, sequence_length = get_batch_ph_data(model_obj, one_batch_of_ids, mode="train")
 #        print(labels)
         yield (data, labels, sequence_length)
 
-def get_batch_ph_train_data(model_obj, one_batch_ids):
-    batch_size = model_obj.config.batch_size
-    max_frames_in_batch, sequence_length = get_max_frames(one_batch_ids, model_obj.train_data)
+def get_batch_ph_data(model_obj, one_batch_ids, mode="train"):
+    batch_size = len(one_batch_ids)
+    if mode=="train":
+        d_data = model_obj.train_data
+        d_labels = model_obj.train_labels
+    if mode=="val":
+        d_data = model_obj.val_data
+        d_labels = model_obj.val_labels
+    max_frames_in_batch, sequence_length = get_max_frames(one_batch_ids, d_data)
     frame_dim = model_obj.config.frame_dim
     noOfActivities = model_obj.config.no_of_activities
     data = -1.0*np.ones((batch_size, max_frames_in_batch, frame_dim))
     labels = np.zeros((batch_size,noOfActivities))
     for i, id in enumerate(one_batch_ids):
-        frame_len = len(model_obj.train_data[id])
-        data[i][:frame_len] = model_obj.train_data[id]
-        labels[i] = model_obj.train_labels[id]
+        frame_len = len(d_data[id])
+        data[i][:frame_len] = d_data[id]
+        labels[i] = d_labels[id]
     return data, labels, sequence_length
 
 def get_number_of_objects():
@@ -70,12 +76,12 @@ def parser(file):
         arr.append(intArray[1:])
     return arr
     
-def get_max_frames(one_batch_ids, train_data):
+def get_max_frames(one_batch_ids, data):
     batch = []
     sequence_length = []
     for id in one_batch_ids:
-        batch.append(train_data[id])
-        sequence_length.append(len(train_data[id]))
+        batch.append(data[id])
+        sequence_length.append(len(data[id]))
     mx=0
     for vid in batch:
         mx = max(mx, len(vid))
@@ -97,17 +103,28 @@ def plot_performance(model_dir):
                 % model_dir, "rb"))
     val_accuracies = pickle.load(open("%s/metrics/val_accuracies"\
                 % model_dir, "rb"))
-    epochs_losses = pickle.load(open("%s/losses/epochs_losses" % model_dir, "rb"))
-
+    train_epochs_losses = pickle.load(open("%s/losses/train_epochs_losses" % model_dir, "rb"))
+    val_epochs_losses = pickle.load(open("%s/losses/val_epochs_losses" % model_dir, "rb"))
+    
     plt.figure(1)
-    plt.plot(epochs_losses, "k^")
-    plt.plot(epochs_losses, "k")
+    plt.plot(train_epochs_losses, "k^")
+    plt.plot(train_epochs_losses, "k")
     plt.ylabel("loss")
     plt.xlabel("epoch")
-    plt.title("loss per epoch")
-    plt.savefig("%s/plots/epochs_losses.png" % model_dir)
+    plt.title("train loss per epoch")
+    plt.savefig("%s/plots/train_epochs_losses.png" % model_dir)
     
+#    print("before plotting")
+#    print(val_epochs_losses)
     plt.figure(2)
+    plt.plot(val_epochs_losses, "k^")
+    plt.plot(val_epochs_losses, "k")
+    plt.ylabel("loss")
+    plt.xlabel("epoch")
+    plt.title("val loss per epoch")
+    plt.savefig("%s/plots/val_epochs_losses.png" % model_dir)
+    
+    plt.figure(3)
     plt.plot(train_accuracies, "k^")
     plt.plot(train_accuracies, "k")
     plt.ylabel("train accuracy")
@@ -115,7 +132,7 @@ def plot_performance(model_dir):
     plt.title("train accuracy per epoch")
     plt.savefig("%s/plots/train_accuracies.png" % model_dir)
     
-    plt.figure(3)
+    plt.figure(4)
     plt.plot(val_accuracies, "k^")
     plt.plot(val_accuracies, "k")
     plt.ylabel("val accuracy")

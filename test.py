@@ -7,10 +7,6 @@ Created on Fri Sep 14 16:17:32 2018
 """
 import numpy as np
 
-x = np.array([[1,2], [1,3]])
-
-for it in x:
-    print (it)
-    
-x = [0, 0, 0, 0]
-print(x==[0]*4)
+x = [1, 2, 3, 4]
+x.reverse()
+print(x)
