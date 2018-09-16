@@ -5,9 +5,11 @@ Created on Mon Sep 10 14:24:27 2018
 
 @author: elbarbari
 """
-import os
 import random
 import numpy as np
+from datetime import datetime
+import pickle
+import matplotlib.pyplot as plt
 
 class2id = {'label1':0, 'label2':1, 'label3':2}
 
@@ -82,4 +84,42 @@ def get_max_frames(one_batch_ids, train_data):
 def print_array(array):
     for r in array:
         print(r)
+
+def log(log_message):
+    with open("log.txt", "a") as log_file:
+        log_file.write(datetime.strftime(datetime.today(),
+                    "%Y-%m-%d %H:%M:%S") + ": " + log_message)
+        log_file.write("\n")
+
+def plot_performance(model_dir):
+
+    train_accuracies = pickle.load(open("%s/metrics/train_accuracies"\
+                % model_dir, "rb"))
+    val_accuracies = pickle.load(open("%s/metrics/val_accuracies"\
+                % model_dir, "rb"))
+    epochs_losses = pickle.load(open("%s/losses/epochs_losses" % model_dir, "rb"))
+
+    plt.figure(1)
+    plt.plot(epochs_losses, "k^")
+    plt.plot(epochs_losses, "k")
+    plt.ylabel("loss")
+    plt.xlabel("epoch")
+    plt.title("loss per epoch")
+    plt.savefig("%s/plots/epochs_losses.png" % model_dir)
+    
+    plt.figure(2)
+    plt.plot(train_accuracies, "k^")
+    plt.plot(train_accuracies, "k")
+    plt.ylabel("train accuracy")
+    plt.xlabel("epoch")
+    plt.title("train accuracy per epoch")
+    plt.savefig("%s/plots/train_accuracies.png" % model_dir)
+    
+    plt.figure(3)
+    plt.plot(val_accuracies, "k^")
+    plt.plot(val_accuracies, "k")
+    plt.ylabel("val accuracy")
+    plt.xlabel("epoch")
+    plt.title("val accuracy per epoch")
+    plt.savefig("%s/plots/val_accuracies.png" % model_dir)
     

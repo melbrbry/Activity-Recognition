@@ -14,7 +14,7 @@ class LSTM_Config(object):
         self.frame_dim = 39
         self.no_of_activities = 3
         self.no_of_layers = 1
-        self.max_no_of_epochs = 50
+        self.max_no_of_epochs = 20
         self.model_name = "model_keep=%.2f_batch=%d_hidden_dim=%d_layers=%d" % (self.dropout,
                     self.batch_size, self.hidden_dim,
                     self.no_of_layers)
@@ -40,7 +40,11 @@ class LSTM_Model(object):
             os.mkdir("%s/weights" % self.config.model_dir)
         if not os.path.exists("%s/losses" % self.config.model_dir):
             os.mkdir("%s/losses" % self.config.model_dir)
-
+        if not os.path.exists("%s/metrics" % self.config.model_dir):
+            os.mkdir("%s/metrics" % self.config.model_dir)
+        if not os.path.exists("%s/plots" % self.config.model_dir):
+            os.mkdir("%s/plots" % self.config.model_dir)
+            
     def load_utilities_data(self):
         file = './dataset/train/data'
         with open(file, 'rb') as filehandle:  
@@ -56,10 +60,10 @@ class LSTM_Model(object):
             self.val_labels = pickle.load(filehandle) 
         file = './dataset/test/data'
         with open(file, 'rb') as filehandle:  
-            self.val_data = pickle.load(filehandle)
+            self.test_data = pickle.load(filehandle)
         file = './dataset/test/labels'
         with open(file, 'rb') as filehandle:  
-            self.val_labels = pickle.load(filehandle)                         
+            self.test_labels = pickle.load(filehandle)                         
 
     def add_placeholders(self):
         self.dropout_ph = tf.placeholder(tf.float32, name="dropout_ph") 
@@ -185,21 +189,34 @@ def main():
         init_l = tf.local_variables_initializer()
         sess.run(init_g)
         sess.run(init_l)
-
+        epochs_losses, train_accuracies, val_accuracies = [], [], []
         for epoch in range(config.max_no_of_epochs):
-            print ("epoch: %d/%d" % (epoch, config.max_no_of_epochs-1))
+            print("epoch: %d/%d" % (epoch+1, config.max_no_of_epochs))
+            ut.log("epoch: %d/%d" % (epoch+1, config.max_no_of_epochs))
             batch_losses = model.run_epoch(sess)
             epoch_loss = np.mean(batch_losses)
-            print("loss:", epoch_loss)
+            print("loss = %f" % (epoch_loss))
+            ut.log("loss = %f" % (epoch_loss))
+            epochs_losses.append(epoch_loss)
+            pickle.dump(epochs_losses, open("%s/losses/epochs_losses"\
+                        % model.config.model_dir, "wb"))
             train_accuracy = model.compute_accuracy(sess, mode='train') 
             val_accuracy = model.compute_accuracy(sess, mode='val')
-            print("train accuracy:", train_accuracy)
-            print("val accuracy:", val_accuracy)
-
+            print("train accuracy = %f | val accuracy = %f" % (train_accuracy, val_accuracy))
+            ut.log("train accuracy = %f | val accuracy = %f" % (train_accuracy, val_accuracy))
+            train_accuracies.append(train_accuracy)
+            val_accuracies.append(val_accuracy)
+            pickle.dump(train_accuracies, open("%s/metrics/train_accuracies"\
+                        % model.config.model_dir, "wb"))
+            pickle.dump(val_accuracies, open("%s/metrics/val_accuracies"\
+                        % model.config.model_dir, "wb"))
+            
         
 #        saver.save(sess, "%s/weights/model" % model.config.model_dir)        
         test_accuracy = model.compute_accuracy(sess, mode='test')
-        print("test accuracy: ", test_accuracy)
+        print("test accuracy = %f" % (test_accuracy))
+        ut.log("test accuracy = %f" % (test_accuracy))
+        ut.plot_performance(config.model_dir)
         
         
 if __name__ == '__main__':
