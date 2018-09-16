@@ -78,3 +78,8 @@ def get_max_frames(one_batch_ids, train_data):
     for vid in batch:
         mx = max(mx, len(vid))
     return mx, sequence_length
+
+def print_array(array):
+    for r in array:
+        print(r)
+    

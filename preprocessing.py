@@ -11,13 +11,12 @@ import pickle
 import utilities as ut
 import numpy as np
 noOfObjs = 39
-noOfActivities = 10
+noOfActivities = 3
 videos_path = './videos/'
 #class2id = {'label1':0, 'label2':1, 'label3':2}
-class2id = {'Blowing leaves':0, 'Cutting the grass': 1, 'Fixing the roof':2,
-            'Mowing the lawn':3, 'Painting fence': 4, 'Raking leaves': 5,
-            'Roof shingle removal':6, 'Shoveling snow': 7, 'Spread mulch': 8,
-            'Trimming branches or hedges': 9}
+class2id = {'Fixing the roof':0,
+            'Raking leaves': 1,
+            'Trimming branches or hedges': 2}
         
 def to_hot(arr):
     alho = []
@@ -37,7 +36,7 @@ def pad(arr, maxFrames):
 def turncate(arr, minFrames=70):
     return arr[:minFrames]
     
-def collect_and_reformat(directory, maxFrames):
+def collect_and_reformat(directory):
     videos = []
     for file in os.listdir(directory):
         if not file in ['data', 'labels']:
@@ -79,10 +78,10 @@ def collect_labels(directory):
         pickle.dump(labels, filehandle)
                          
 def main():
-    maxFrames = ut.get_max_frames("./dataset/")
-    collect_and_reformat("./dataset/train/", maxFrames)
-    collect_and_reformat("./dataset/val/", maxFrames)
-    collect_and_reformat("./dataset/test/", maxFrames)
+#    maxFrames = ut.get_max_frames("./dataset/")
+    collect_and_reformat("./dataset/train/")
+    collect_and_reformat("./dataset/val/")
+    collect_and_reformat("./dataset/test/")
     collect_labels("./dataset/train/")
     collect_labels("./dataset/val/")
     collect_labels("./dataset/test/")

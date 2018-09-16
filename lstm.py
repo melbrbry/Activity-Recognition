@@ -9,12 +9,12 @@ class LSTM_Config(object):
     def __init__(self):
         self.dropout = 0.75
         self.hidden_dim = 400 
-        self.batch_size = 9
-        self.lr = 0.001
+        self.batch_size = 3
+        self.lr = 0.0001
         self.frame_dim = 39
-        self.no_of_activities = 10 
-        self.no_of_layers = 2
-        self.max_no_of_epochs = 20
+        self.no_of_activities = 3
+        self.no_of_layers = 1
+        self.max_no_of_epochs = 50
         self.model_name = "model_keep=%.2f_batch=%d_hidden_dim=%d_layers=%d" % (self.dropout,
                     self.batch_size, self.hidden_dim,
                     self.no_of_layers)
@@ -111,28 +111,10 @@ class LSTM_Model(object):
                     tf.float32)
         outputs, final_state = tf.nn.dynamic_rnn(stacked_LSTM_cell,
                     self.input_ph, initial_state=initial_state, sequence_length=self.sequence_length_ph)
-
-#        padding_frame = tf.constant([0]*self.config.hidden_dim)
-        
-        
-#        output = np.zeros((tf.shape(outputs)[0], 1, tf.shape(outputs)[2]))
-#        for i in range(tf.shape(self.input_ph)[0]):
-#            last = 0
-#            for j  in range(tf.shape(self.input_ph)[1]):
-#                 if tf.equal(outputs[:][j], padding_frame):
-#                     break
-#                 last = j
-#            outputs[i][0] = outputs[i][last]
-#        print(final_state)
         lstm_h = final_state[0].h
-#        print(lstm_h)
         
         output = lstm_h
         self.output = lstm_h
-#        for i in range(self.config.batch_size):
-#            if tf.equal(padding_frame, output):
-#                counter
-#        print("outputs", outputs, "output", output)
         output = tf.reshape(output, [-1, self.config.hidden_dim])
 
         with tf.variable_scope("logits"):
@@ -154,10 +136,11 @@ class LSTM_Model(object):
     
     def add_pred_op(self):
         self.predict_op = tf.one_hot(tf.argmax(tf.nn.softmax(self.logits), axis=1), depth=self.config.no_of_activities)
+#        self.predict_op = tf.nn.softmax(self.logits)
 #        self.predict_op = self.logits
         
     def add_accuracy_op(self):
-        self.accuracy_op = tf.metrics.accuracy(self.labels_ph, self.predictions_ph)
+        self.accuracy_op = tf.contrib.metrics.accuracy(tf.argmax(self.labels_ph,1), tf.argmax(self.predictions_ph, 1))
         
     def run_epoch(self, session):
         batch_losses = []
@@ -169,10 +152,6 @@ class LSTM_Model(object):
             output, batch_loss, _ = session.run([self.output, self.loss, self.train_op],
                                         feed_dict=feed_dict)
             
-#            if step==0:
-#                for it in output:
-#                    print("new output")
-#                    print(it)
             batch_losses.append(batch_loss)
         return batch_losses
  
@@ -185,12 +164,14 @@ class LSTM_Model(object):
     def calc_accuracy_on_val(self, session):
         val_data = np.array(self.val_data)
         val_labels = np.array(self.val_labels)
-        print("true labels ", val_labels)
+        print("TRUE LABELS")
+        ut.print_array(val_labels)
         predictions = []
         for val_data_inst in val_data:
             prediction = self.predict_activities(session, val_data_inst)
             predictions.append(list(prediction[0]))
-        print("predictions ", list(predictions))
+        print("PREDICTED LABELS")
+        ut.print_array(predictions)
         feed_dict = self.create_acc_feed_dict(predictions, val_labels)
         accuracy = session.run(self.accuracy_op, feed_dict=feed_dict)
 #        accuracy = 0
