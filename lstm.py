@@ -25,17 +25,11 @@ class LSTM_Model(object):
     def __init__(self, config):
         self.config = config
         self.create_model_dirs()
-        print("Creating Model Directories PASSED!")
         self.load_utilities_data()
-        print ("Loading Utilities Data PASSED!")
         self.add_placeholders()
-        print("Adding Placeholders PASSED!")
         self.add_logits()
-        print("Adding Logits PASSED!")
         self.add_loss_op()
-        print("Adding Loss op PASSED!")
         self.add_training_op()
-        print("Adding Trainign op PASSED!")
         self.add_pred_op()
         self.add_accuracy_op()
         
@@ -58,6 +52,12 @@ class LSTM_Model(object):
         with open(file, 'rb') as filehandle:  
             self.val_data = pickle.load(filehandle)
         file = './dataset/val/labels'
+        with open(file, 'rb') as filehandle:  
+            self.val_labels = pickle.load(filehandle) 
+        file = './dataset/test/data'
+        with open(file, 'rb') as filehandle:  
+            self.val_data = pickle.load(filehandle)
+        file = './dataset/test/labels'
         with open(file, 'rb') as filehandle:  
             self.val_labels = pickle.load(filehandle)                         
 
@@ -84,9 +84,9 @@ class LSTM_Model(object):
         feed_dict[self.sequence_length_ph] = sequence_length
         return feed_dict 
    
-    def create_pred_feed_dict(self, val_data_inst, dropout, sequence_length):
+    def create_pred_feed_dict(self, data_inst, dropout, sequence_length):
         feed_dict = {}
-        feed_dict[self.input_ph] = np.array([val_data_inst])
+        feed_dict[self.input_ph] = np.array([data_inst])
         feed_dict[self.dropout_ph] = dropout        
         feed_dict[self.sequence_length_ph] = sequence_length
         return feed_dict
@@ -112,10 +112,8 @@ class LSTM_Model(object):
         outputs, final_state = tf.nn.dynamic_rnn(stacked_LSTM_cell,
                     self.input_ph, initial_state=initial_state, sequence_length=self.sequence_length_ph)
         lstm_h = final_state[0].h
-        
-        output = lstm_h
-        self.output = lstm_h
-        output = tf.reshape(output, [-1, self.config.hidden_dim])
+
+        output = tf.reshape(lstm_h, [-1, self.config.hidden_dim])
 
         with tf.variable_scope("logits"):
             W_logits = tf.get_variable("W_logits",
@@ -136,54 +134,51 @@ class LSTM_Model(object):
     
     def add_pred_op(self):
         self.predict_op = tf.one_hot(tf.argmax(tf.nn.softmax(self.logits), axis=1), depth=self.config.no_of_activities)
-#        self.predict_op = tf.nn.softmax(self.logits)
-#        self.predict_op = self.logits
-        
+     
     def add_accuracy_op(self):
         self.accuracy_op = tf.contrib.metrics.accuracy(tf.argmax(self.labels_ph,1), tf.argmax(self.predictions_ph, 1))
         
     def run_epoch(self, session):
         batch_losses = []
         for step, (data_batch, labels_batch, sequence_length) in enumerate(ut.train_data_iterator(self)):
-#            print("total len:", len(data_batch))
             feed_dict = self.create_train_feed_dict(data_batch,
                                               labels_batch, self.config.dropout, sequence_length)
-            
-            output, batch_loss, _ = session.run([self.output, self.loss, self.train_op],
+            batch_loss, _ = session.run([self.loss, self.train_op],
                                         feed_dict=feed_dict)
-            
             batch_losses.append(batch_loss)
         return batch_losses
  
-    def predict_activities(self, session, val_data_inst):
-        sequence_length = [len(val_data_inst)]
-        feed_dict = self.create_pred_feed_dict(val_data_inst, self.config.dropout, sequence_length)
+    def predict_activities(self, session, data_inst):
+        sequence_length = [len(data_inst)]
+        feed_dict = self.create_pred_feed_dict(data_inst, self.config.dropout, sequence_length)
         prediction = session.run(self.predict_op, feed_dict=feed_dict)
         return prediction
     
-    def calc_accuracy_on_val(self, session):
-        val_data = np.array(self.val_data)
-        val_labels = np.array(self.val_labels)
-        print("TRUE LABELS")
-        ut.print_array(val_labels)
+    def compute_accuracy(self, session, mode='train', no_of_instances=25):
+        if mode == 'train':     
+            data = np.array(self.train_data)
+            labels = np.array(self.train_labels)
+        if mode == 'val':
+            data = np.array(self.val_data)
+            labels = np.array(self.val_labels)
+        if mode == 'test':
+            data = np.array(self.test_data)
+            labels = np.array(self.test_labels)
+            no_of_instances = len(data)
         predictions = []
-        for val_data_inst in val_data:
-            prediction = self.predict_activities(session, val_data_inst)
-            predictions.append(list(prediction[0]))
-        print("PREDICTED LABELS")
-        ut.print_array(predictions)
-        feed_dict = self.create_acc_feed_dict(predictions, val_labels)
+        for step, data_inst in enumerate(data):
+            if step < no_of_instances:
+                prediction = self.predict_activities(session, data_inst)
+                predictions.append(list(prediction[0]))
+        feed_dict = self.create_acc_feed_dict(predictions, labels[:no_of_instances])
         accuracy = session.run(self.accuracy_op, feed_dict=feed_dict)
-#        accuracy = 0
         return accuracy
 
 def main():    
     tf.reset_default_graph()
     config = LSTM_Config()
-    print("Model Configure PASSED!")
     model = LSTM_Model(config)
-    print("Model Create PASSED!")    
-#    saver = tf.train.Saver(max_to_keep=model.config.max_no_of_epochs)
+#    saver = tf.train.Saver()
     
     with tf.Session() as sess:
         init_g = tf.global_variables_initializer()
@@ -194,14 +189,18 @@ def main():
         for epoch in range(config.max_no_of_epochs):
             print ("epoch: %d/%d" % (epoch, config.max_no_of_epochs-1))
             batch_losses = model.run_epoch(sess)
-#            print(batch_losses)
             epoch_loss = np.mean(batch_losses)
             print("loss:", epoch_loss)
-            val_accuracy = model.calc_accuracy_on_val(sess)
+            train_accuracy = model.compute_accuracy(sess, mode='train') 
+            val_accuracy = model.compute_accuracy(sess, mode='val')
+            print("train accuracy:", train_accuracy)
             print("val accuracy:", val_accuracy)
-#            if epoch%10 == 0:
-#                saver.save(sess, "%s/weights/model" % model.config.model_dir,
-#                            global_step=epoch)
 
+        
+#        saver.save(sess, "%s/weights/model" % model.config.model_dir)        
+        test_accuracy = model.compute_accuracy(sess, mode='test')
+        print("test accuracy: ", test_accuracy)
+        
+        
 if __name__ == '__main__':
     main()
