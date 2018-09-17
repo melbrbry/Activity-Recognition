@@ -85,8 +85,8 @@ def collect_and_resplit(directory, train_ratio, val_ratio, test_ratio):
                     
     
 def main():
-#    collect_and_resplit("./activity-splitted dataset/", train_ratio=0.7,
-#                        val_ratio=0.15, test_ratio=0.15)
+    collect_and_resplit("./activity-splitted dataset/", train_ratio=0.8,
+                        val_ratio=0.1, test_ratio=0.1)
     collect_and_reformat("./dataset/train/")
     collect_and_reformat("./dataset/val/")
     collect_and_reformat("./dataset/test/")
