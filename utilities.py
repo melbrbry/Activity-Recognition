@@ -11,7 +11,6 @@ from datetime import datetime
 import pickle
 import matplotlib.pyplot as plt
 
-class2id = {'label1':0, 'label2':1, 'label3':2}
 
 def get_train_batches(model_obj):
     batch_size = model_obj.config.batch_size
@@ -55,9 +54,6 @@ def get_batch_ph_data(model_obj, one_batch_ids, mode="train"):
         data[i][:frame_len] = d_data[id]
         labels[i] = d_labels[id]
     return data, labels, sequence_length
-
-def get_number_of_objects():
-    return len(class2id)
 
 def parser(file):
     f = open(file)
@@ -113,9 +109,7 @@ def plot_performance(model_dir):
     plt.xlabel("epoch")
     plt.title("train loss per epoch")
     plt.savefig("%s/plots/train_epochs_losses.png" % model_dir)
-    
-#    print("before plotting")
-#    print(val_epochs_losses)
+
     plt.figure(2)
     plt.plot(val_epochs_losses, "k^")
     plt.plot(val_epochs_losses, "k")

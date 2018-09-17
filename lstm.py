@@ -9,10 +9,10 @@ class LSTM_Config(object):
     def __init__(self):
         self.dropout = 0.75
         self.hidden_dim = 400 
-        self.batch_size = 3
-        self.lr = 0.0001
+        self.batch_size = 128
+        self.lr = 0.001
         self.frame_dim = 39
-        self.no_of_activities = 3
+        self.no_of_activities = 10
         self.no_of_layers = 1
         self.min_no_of_epochs = 20
         self.max_no_of_epochs = 100
@@ -161,7 +161,7 @@ class LSTM_Model(object):
         prediction = session.run(self.predict_op, feed_dict=feed_dict)
         return prediction
     
-    def compute_accuracy(self, session, mode='train', no_of_instances=25):
+    def compute_accuracy(self, session, mode='train', no_of_instances=50):
         if mode == 'train':     
             data = np.array(self.train_data)
             labels = np.array(self.train_labels)
@@ -245,22 +245,22 @@ def main():
             
             if model.config.eval_criteria == "accuracy":
                     if val_accuracy > best_val_accuracy:
-                        saver.save(sess, "%s/weights/model-epoch-%d" % (model.config.model_dir, epoch+1))
+#                        saver.save(sess, "%s/weights/model-epoch-%d" % (model.config.model_dir, epoch+1))
                         best_val_accuracy = val_accuracy
-                    if epoch > model.config.min_no_of_epochs:
-                        if model.early_stopping(val_accuracies, best_val_accuracy,\
-                                            model.config.patience, model.config.eval_criteria):
-                                break
+#                    if epoch > model.config.min_no_of_epochs:
+#                        if model.early_stopping(val_accuracies, best_val_accuracy,\
+#                                            model.config.patience, model.config.eval_criteria):
+#                                break
             
             if model.config.eval_criteria == "loss":
                     if val_epoch_loss < best_val_loss:
-                        saver.save(sess, "%s/weights/model-epoch-%d" % (model.config.model_dir, epoch+1))
+#                        saver.save(sess, "%s/weights/model-epoch-%d" % (model.config.model_dir, epoch+1))
                         best_val_loss = val_epoch_loss
                         print("best_val_loss", best_val_loss)
-                    if epoch > model.config.min_no_of_epochs:
-                        if model.early_stopping(val_epochs_losses, best_val_loss,\
-                                            model.config.eval_criteria, model.config.patience):
-                                break
+#                    if epoch > model.config.min_no_of_epochs:
+#                        if model.early_stopping(val_epochs_losses, best_val_loss,\
+#                                            model.config.eval_criteria, model.config.patience):
+#                                break
                     
             
         test_accuracy = model.compute_accuracy(sess, mode='test')
