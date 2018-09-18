@@ -3,11 +3,17 @@ import numpy as np
 import tensorflow as tf
 import utilities as ut
 import pickle
+import random
+from tensorflow import set_random_seed
+set_random_seed(1)
+random.seed(2)
+np.random.seed(3)
+os.environ['PYTHONHASHSEED'] = '0'
 
 class LSTM_Config(object):
     
     def __init__(self):
-        self.dropout = 0.6
+        self.dropout = 0.9
         self.hidden_dim = 400
         self.batch_size = 256
         self.lr = 0.001
@@ -15,7 +21,7 @@ class LSTM_Config(object):
         self.no_of_activities = 10
         self.no_of_layers = 1
         self.min_no_of_epochs = 20
-        self.max_no_of_epochs = 150
+        self.max_no_of_epochs = 100
         self.model_name = "model_keep=%.2f_batch=%d_hidden_dim=%d_layers=%d" % (self.dropout,
                     self.batch_size, self.hidden_dim,
                     self.no_of_layers)
@@ -170,6 +176,7 @@ class LSTM_Model(object):
         if mode == 'test':
             data = np.array(self.test_data)
             labels = np.array(self.test_labels)
+            no_of_instances=len(data)
         predictions = []
         for step, data_inst in enumerate(data):
             if step < no_of_instances:
@@ -201,65 +208,65 @@ def main():
     saver = tf.train.Saver(max_to_keep=model.config.max_no_of_epochs)
     
     with tf.Session() as sess:
-        init_g = tf.global_variables_initializer()
-        init_l = tf.local_variables_initializer()
-        sess.run(init_g)
-        sess.run(init_l)
-        train_epochs_losses, val_epochs_losses, train_accuracies, val_accuracies = [], [], [], []
-        best_val_accuracy = 0
-        best_acc_loss = float("INF")
-        best_val_loss = float("INF")
-        for epoch in range(config.max_no_of_epochs):
-            print("epoch: %d/%d" % (epoch+1, config.max_no_of_epochs))
-            ut.log("epoch: %d/%d" % (epoch+1, config.max_no_of_epochs))
-            batch_losses = model.run_epoch(sess)
-            if epoch % 5 == 0:
-                if model.config.lr > 0.0001:
-                    model.config.lr -= 0.0001
-                else:
-                    model.config.lr -= 0.00001 
-                    model.config.lr = max(0.00001, model.config.lr)
-            epoch_loss = np.mean(batch_losses)
-            val_epoch_loss = model.compute_val_loss(sess)
-            print("train loss = %f | val loss = %f" % (epoch_loss, val_epoch_loss))
-            ut.log("train loss = %f | val loss = %f" % (epoch_loss, val_epoch_loss))
-            train_epochs_losses.append(epoch_loss)
-            pickle.dump(train_epochs_losses, open("%s/losses/train_epochs_losses"\
-                        % model.config.model_dir, "wb"))
-            val_epochs_losses.append(val_epoch_loss)
-#            print("before plotting")
-#            print(val_epochs_losses)
-            pickle.dump(val_epochs_losses, open("%s/losses/val_epochs_losses"\
-                        % model.config.model_dir, "wb"))
-            
-            train_accuracy = model.compute_accuracy(sess, mode='train') 
-            val_accuracy = model.compute_accuracy(sess, mode='val')
-            print("train accuracy = %f | val accuracy = %f" % (train_accuracy, val_accuracy))
-            ut.log("train accuracy = %f | val accuracy = %f" % (train_accuracy, val_accuracy))
-            train_accuracies.append(train_accuracy)
-            val_accuracies.append(val_accuracy)
-            pickle.dump(train_accuracies, open("%s/metrics/train_accuracies"\
-                        % model.config.model_dir, "wb"))
-            pickle.dump(val_accuracies, open("%s/metrics/val_accuracies"\
-                        % model.config.model_dir, "wb"))
-            
-            if val_accuracy > best_val_accuracy or \
-            (val_accuracy == best_val_accuracy and val_epoch_loss < best_acc_loss):
-                saver.save(sess, "%s/weights/model" % (model.config.model_dir))
-                best_val_accuracy = val_accuracy
-                best_acc_loss = val_epoch_loss
-            
-            best_val_loss = min(val_epoch_loss, best_val_loss)
-    
-            if epoch > model.config.min_no_of_epochs and \
-            model.early_stopping(val_epochs_losses, best_val_loss, model.config.patience):
-                break
+#        init_g = tf.global_variables_initializer()
+#        init_l = tf.local_variables_initializer()
+#        sess.run(init_g)
+#        sess.run(init_l)
+#        train_epochs_losses, val_epochs_losses, train_accuracies, val_accuracies = [], [], [], []
+#        best_val_accuracy = 0
+#        best_acc_loss = float("INF")
+#        best_val_loss = float("INF")
+#        for epoch in range(config.max_no_of_epochs):
+#            print("epoch: %d/%d" % (epoch+1, config.max_no_of_epochs))
+#            ut.log("epoch: %d/%d" % (epoch+1, config.max_no_of_epochs))
+#            batch_losses = model.run_epoch(sess)
+#            if epoch % 5 == 0:
+#                if model.config.lr > 0.0001:
+#                    model.config.lr -= 0.0001
+#                else:
+#                    model.config.lr -= 0.00001 
+#                    model.config.lr = max(0.00001, model.config.lr)
+#            epoch_loss = np.mean(batch_losses)
+#            val_epoch_loss = model.compute_val_loss(sess)
+#            print("train loss = %f | val loss = %f" % (epoch_loss, val_epoch_loss))
+#            ut.log("train loss = %f | val loss = %f" % (epoch_loss, val_epoch_loss))
+#            train_epochs_losses.append(epoch_loss)
+#            pickle.dump(train_epochs_losses, open("%s/losses/train_epochs_losses"\
+#                        % model.config.model_dir, "wb"))
+#            val_epochs_losses.append(val_epoch_loss)
+##            print("before plotting")
+##            print(val_epochs_losses)
+#            pickle.dump(val_epochs_losses, open("%s/losses/val_epochs_losses"\
+#                        % model.config.model_dir, "wb"))
+#            
+#            train_accuracy = model.compute_accuracy(sess, mode='train') 
+#            val_accuracy = model.compute_accuracy(sess, mode='val')
+#            print("train accuracy = %f | val accuracy = %f" % (train_accuracy, val_accuracy))
+#            ut.log("train accuracy = %f | val accuracy = %f" % (train_accuracy, val_accuracy))
+#            train_accuracies.append(train_accuracy)
+#            val_accuracies.append(val_accuracy)
+#            pickle.dump(train_accuracies, open("%s/metrics/train_accuracies"\
+#                        % model.config.model_dir, "wb"))
+#            pickle.dump(val_accuracies, open("%s/metrics/val_accuracies"\
+#                        % model.config.model_dir, "wb"))
+#            
+#            if val_accuracy > best_val_accuracy or \
+#            (val_accuracy == best_val_accuracy and val_epoch_loss < best_acc_loss):
+#                saver.save(sess, "%s/weights/model" % (model.config.model_dir))
+#                best_val_accuracy = val_accuracy
+#                best_acc_loss = val_epoch_loss
+#            
+#            best_val_loss = min(val_epoch_loss, best_val_loss)
+#    
+#            if epoch > model.config.min_no_of_epochs and \
+#            model.early_stopping(val_epochs_losses, best_val_loss, model.config.patience):
+#                break
 
-#        saver.restore(sess, "models/model")
+        saver.restore(sess, "models/best/model")
         test_accuracy = model.compute_accuracy(sess, mode='test')
         print("test accuracy = %f" % (test_accuracy))
         ut.log("test accuracy = %f" % (test_accuracy))
-        ut.plot_performance(config.model_dir)
+#        ut.plot_performance(config.model_dir)
         
         
 if __name__ == '__main__':
