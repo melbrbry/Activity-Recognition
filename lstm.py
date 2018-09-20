@@ -217,13 +217,19 @@ class LSTM_Model(object):
          
 def main():    
     tf.reset_default_graph()
+#    graph =  tf.Graph()
+#    with graph.as_default():
     config = LSTM_Config()
     model = LSTM_Model(config)
+#    writer = tf.summary.FileWriter(logdir='logdir', graph=graph)
+#    writer.flush()
     saver = tf.train.Saver(max_to_keep=model.config.max_no_of_epochs)
     
     with tf.Session() as sess:
         init_g = tf.global_variables_initializer()
         init_l = tf.local_variables_initializer()
+        writer = tf.summary.FileWriter(logdir='logdir', graph=sess.graph_def)
+        writer.flush()
         sess.run(init_g)
         sess.run(init_l)
         train_epochs_losses, val_epochs_losses, train_accuracies, val_accuracies = [], [], [], []
