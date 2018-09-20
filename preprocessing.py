@@ -12,33 +12,60 @@ import utilities as ut
 import numpy as np
 from shutil import copy
 from random import shuffle
+from sklearn.preprocessing import Normalizer
+
 
 noOfObjs = 39
 noOfActivities = 10
-videos_path = './activity-splitted dataset/'
+videos_path = './activity-splitted JSON dataset/'
 class2id = {'Blowing leaves': 0, 'Cutting the grass': 1, 'Fixing the roof': 2,
            'Mowing the lawn': 3, 'Painting fence': 4, 'Raking leaves': 5,
            'Roof shingle removal': 6, 'Shoveling snow': 7, 'Spread mulch': 8,
             'Trimming branches or hedges': 9}
         
-def to_hot(arr):
-    alho = []
-    for a in arr:
-        ho = [0 for i in range(noOfObjs)]
-        for i in a:
-            ho[i] = 1
-        alho.append(ho)
-    return alho
+def build_vid(ids_per_frame, confs_per_frame, rois_per_frame):
+    vid = []
+    for step_frame, frame_ids in enumerate(ids_per_frame):
+        frame_features = []
+        for object_id in range(noOfObjs):
+            object_index = -1
+            for i, it in enumerate(frame_ids):
+                if it==object_id:
+                    object_index = i
+                    break
+            if object_index == -1:
+                for i in range(5):
+                    frame_features.append(0)
+            else:
+                frame_features.append(confs_per_frame[step_frame][object_index])
+                for i in range(4):
+                    frame_features.append(rois_per_frame[step_frame][object_index][i])
+        vid.append(frame_features)
+    return vid
     
 def collect_and_reformat(directory):
     videos = []
-    for file in os.listdir(directory):
+    for step, file in enumerate(os.listdir(directory)):
         if not file in ['data', 'labels']:
-            video = ut.parser(directory+file)
-            video = to_hot(video)
+            ids_per_frame, confs_per_frame, rois_per_frame = ut.parser(directory+file)
+            video = build_vid(ids_per_frame, confs_per_frame, rois_per_frame)
+#            print(np.array(video).shape)
+
             videos.append(video)
-            
+#            if step==0:
+#                print(videos)
+#            print(np.array(videos).shape)
+    
+#    print(len(videos), len(videos[0]), len(videos[0][0]))
+#    print(np.array(videos).shape)
+#    for vid_id, vid in enumerate(videos):
+##        for frame_id, frame in enumerate(vid):    
+#        scaler = Normalizer().fit(vid)
+#        videos[vid_id] = scaler.transform(vid)
+#    
+#            
     desFile = directory + 'data'
+#    print(np.array(videos).shape)
     with open(desFile, 'wb') as filehandle:  
         pickle.dump(videos, filehandle)
 
@@ -75,24 +102,29 @@ def collect_and_resplit(directory, train_ratio, val_ratio, test_ratio):
         for step, vid in enumerate(all_vid):
             src = directory + sub_dir + "/" + vid
             if step < train_ratio * no_of_videos:
-                copy(src, './dataset/train/')
+                copy(src, './JSON dataset/train/')
             if step >= train_ratio * no_of_videos \
                 and step < (train_ratio+val_ratio) *no_of_videos:
-                copy(src, './dataset/val/')
+                copy(src, './JSON dataset/val/')
             if step >= (train_ratio+val_ratio) *no_of_videos:
-                copy(src, './dataset/test/')
-            
+                copy(src, './JSON dataset/test/')
+
+def test():    
+    desFile = "./JSON dataset/train/data"
+    with open(desFile, 'rb') as filehandle:  
+        print(pickle.load(filehandle)[0][1])
                     
     
 def main():
-    collect_and_resplit("./activity-splitted dataset/", train_ratio=0.8,
-                        val_ratio=0.1, test_ratio=0.1)
-    collect_and_reformat("./dataset/train/")
-    collect_and_reformat("./dataset/val/")
-    collect_and_reformat("./dataset/test/")
-    collect_labels("./dataset/train/")
-    collect_labels("./dataset/val/")
-    collect_labels("./dataset/test/")
+#    collect_and_resplit("./activity-splitted JSON dataset/", train_ratio=0.8,
+#                        val_ratio=0.1, test_ratio=0.1)
+    collect_and_reformat("./JSON dataset/train/")
+    collect_and_reformat("./JSON dataset/val/")
+    collect_and_reformat("./JSON dataset/test/")
+#    collect_labels("./JSON dataset/train/")
+#    collect_labels("./JSON dataset/val/")
+#    collect_labels("./JSON dataset/test/")
     print("preprocessing done!")
+    test()
 
 main()
