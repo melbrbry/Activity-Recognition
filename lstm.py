@@ -22,7 +22,7 @@ class LSTM_Config(object):
         self.no_of_activities = 10
         self.no_of_layers = 1
         self.min_no_of_epochs = 20
-        self.max_no_of_epochs = 125
+        self.max_no_of_epochs = 100
         self.model_name = "model_keep=%.2f_batch=%d_hidden_dim=%d_layers=%d" % (self.dropout,
                     self.batch_size, self.hidden_dim,
                     self.no_of_layers)
@@ -264,10 +264,10 @@ def main():
                 best_acc_loss = val_epoch_loss
             
             best_val_loss = min(val_epoch_loss, best_val_loss)
-    
-            if epoch > model.config.min_no_of_epochs and \
-            model.early_stopping(val_epochs_losses, best_val_loss, model.config.patience):
-                break
+#    
+#            if epoch > model.config.min_no_of_epochs and \
+#            model.early_stopping(val_epochs_losses, best_val_loss, model.config.patience):
+#                break
 
         saver.restore(sess,  "%s/weights/model" % (model.config.model_dir))
         test_accuracy = model.compute_accuracy(sess, mode='test')
