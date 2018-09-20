@@ -59,13 +59,17 @@ def get_batch_ph_data(model_obj, one_batch_ids, mode="train"):
 
 def parser(file):
     ids_per_frame, confs_per_frame, rois_per_frame = [], [], []
+    areas_per_frame,  centers_per_frame = [], []
     with open(file, "rb") as fp:   
         vid = pk.load(fp)
         for frame in range(len(vid)):
             ids_per_frame.append(vid[frame]['class_ids'])
             confs_per_frame.append(vid[frame]['scores'])
             rois_per_frame.append(vid[frame]['rois'])
-    return ids_per_frame, confs_per_frame, rois_per_frame
+            areas_per_frame.append(vid[frame]['areas'])
+            centers_per_frame.append(vid[frame]['centers'])
+            
+    return ids_per_frame, confs_per_frame, rois_per_frame, areas_per_frame, centers_per_frame
             
     
 def get_max_frames(one_batch_ids, data):
