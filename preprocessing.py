@@ -23,32 +23,21 @@ class2id = {'Blowing leaves': 0, 'Cutting the grass': 1, 'Fixing the roof': 2,
            'Roof shingle removal': 6, 'Shoveling snow': 7, 'Spread mulch': 8,
             'Trimming branches or hedges': 9}
         
-def build_vid(ids_per_frame, confs_per_frame, rois_per_frame):
+def build_vid(ids_per_frame, confs_per_frame):
     vid = []
     for step_frame, frame_ids in enumerate(ids_per_frame):
-        frame_features = []
-        for object_id in range(noOfObjs):
-            object_index = -1
-            for i, it in enumerate(frame_ids):
-                if it==object_id:
-                    object_index = i
-                    break
-            if object_index == -1:
-                for i in range(5):
-                    frame_features.append(0)
-            else:
-                frame_features.append(confs_per_frame[step_frame][object_index])
-                for i in range(4):
-                    frame_features.append(rois_per_frame[step_frame][object_index][i])
-        vid.append(frame_features)
+        hot = [0] * noOfObjs
+        for obj_id, conf in enumerate(confs_per_frame[step_frame]):
+            hot[frame_ids[obj_id]] = conf
+        vid.append(hot)
     return vid
     
 def collect_and_reformat(directory):
     videos = []
     for step, file in enumerate(os.listdir(directory)):
         if not file in ['data', 'labels']:
-            ids_per_frame, confs_per_frame, rois_per_frame = ut.parser(directory+file)
-            video = build_vid(ids_per_frame, confs_per_frame, rois_per_frame)
+            ids_per_frame, confs_per_frame = ut.parser(directory+file)
+            video = build_vid(ids_per_frame, confs_per_frame)
 #            print(np.array(video).shape)
 
             videos.append(video)

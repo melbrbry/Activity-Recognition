@@ -18,7 +18,7 @@ class LSTM_Config(object):
         self.hidden_dim = 400
         self.batch_size = 256
         self.lr = 0.001
-        self.frame_dim = 39 * 5
+        self.frame_dim = 39
         self.no_of_activities = 10
         self.no_of_layers = 1
         self.min_no_of_epochs = 20
@@ -264,10 +264,6 @@ def main():
                 best_acc_loss = val_epoch_loss
             
             best_val_loss = min(val_epoch_loss, best_val_loss)
-#    
-#            if epoch > model.config.min_no_of_epochs and \
-#            model.early_stopping(val_epochs_losses, best_val_loss, model.config.patience):
-#                break
 
         saver.restore(sess,  "%s/weights/model" % (model.config.model_dir))
         test_accuracy = model.compute_accuracy(sess, mode='test')
