@@ -58,20 +58,13 @@ class LSTM_Model(object):
         file = './JSON dataset/train/data'
         with open(file, 'rb') as filehandle:  
             data = pickle.load(filehandle)
-#            scaler = Normalizer().fit(data)
-#            normalized_data = scaler.transform(data)
-#            self.train_data = normalized_data 
             self.train_data = data 
-
         file = './JSON dataset/train/labels'
         with open(file, 'rb') as filehandle:  
             self.train_labels = pickle.load(filehandle)                         
         file = './JSON dataset/val/data'
         with open(file, 'rb') as filehandle:  
             data = pickle.load(filehandle)
-#            scaler = Normalizer().fit(data)
-#            normalized_data = scaler.transform(data)
-#            self.val_data = normalized_data
             self.val_data = data
         file = './JSON dataset/val/labels'
         with open(file, 'rb') as filehandle:  
@@ -79,9 +72,6 @@ class LSTM_Model(object):
         file = './JSON dataset/test/data'
         with open(file, 'rb') as filehandle:  
             data = pickle.load(filehandle)
-#            scaler = Normalizer().fit(data)
-#            normalized_data = scaler.transform(data)
-#            self.test_data = normalized_data
             self.test_data = data
         file = './JSON dataset/test/labels'
         with open(file, 'rb') as filehandle:  
@@ -217,12 +207,8 @@ class LSTM_Model(object):
          
 def main():    
     tf.reset_default_graph()
-#    graph =  tf.Graph()
-#    with graph.as_default():
     config = LSTM_Config()
     model = LSTM_Model(config)
-#    writer = tf.summary.FileWriter(logdir='logdir', graph=graph)
-#    writer.flush()
     saver = tf.train.Saver(max_to_keep=model.config.max_no_of_epochs)
     
     with tf.Session() as sess:
@@ -240,7 +226,6 @@ def main():
             print("epoch: %d/%d" % (epoch+1, config.max_no_of_epochs))
             ut.log("epoch: %d/%d" % (epoch+1, config.max_no_of_epochs))
             batch_losses = model.run_epoch(sess)
-#            model.config.lr = model.config.initial_lr/(1+(epoch/30))
             epoch_loss = np.mean(batch_losses)
             val_epoch_loss = model.compute_val_loss(sess)
             print("train loss = %f | val loss = %f" % (epoch_loss, val_epoch_loss))
@@ -268,7 +253,7 @@ def main():
                 saver.save(sess, "%s/weights/model" % (model.config.model_dir))
                 best_val_accuracy = val_accuracy
                 best_acc_loss = val_epoch_loss
-            
+                
             best_val_loss = min(val_epoch_loss, best_val_loss)
 
         saver.restore(sess,  "%s/weights/model" % (model.config.model_dir))
