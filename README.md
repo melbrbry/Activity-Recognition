@@ -28,16 +28,16 @@ The repository has 4 branches + master branch organized as:
 ## Documentation
 In this section, I write a brief description of some of the repository files/folders
 
-### lstm.py
+#### lstm.py
 In this file, I build the LSTM network and do the training, validation and testing on the dataset.
 
-### preprocessing.py
+#### preprocessing.py
 In this file, I preprocess the data, the output of MRCNN, and put it in a format ready to be fed to the LSTM.
 
-### utilities.py
+#### utilities.py
 In this file, I write some helpful functions that are used in lstm.py
 
-### models
+#### models
 In this folder, I save the best performing model weights, plots and log files of the results.
 
 ## Acknowledgement
