@@ -12,8 +12,6 @@ import utilities as ut
 import numpy as np
 from shutil import copy
 from random import shuffle
-from sklearn.preprocessing import Normalizer
-
 
 noOfObjs = 39
 noOfActivities = 10
@@ -42,8 +40,7 @@ def build_vid(ids_per_frame, confs_per_frame, rois_per_frame, areas_per_frame, c
                     frame_features.append(rois_per_frame[step_frame][object_index][i])
                 for i in range(2):
                     frame_features.append(max(0, centers_per_frame[step_frame][object_index][i]))
-                frame_features.append(areas_per_frame[step_frame][object_index])
-                
+                frame_features.append(areas_per_frame[step_frame][object_index])                
         vid.append(frame_features)
     return vid
     
@@ -53,23 +50,8 @@ def collect_and_reformat(directory):
         if not file in ['data', 'labels']:
             ids_per_frame, confs_per_frame, rois_per_frame, areas_per_frame, centers_per_frame = ut.parser(directory+file)
             video = build_vid(ids_per_frame, confs_per_frame, rois_per_frame, areas_per_frame, centers_per_frame)
-#            print(np.array(video).shape)
-
             videos.append(video)
-#            if step==0:
-#                print(videos)
-#            print(np.array(videos).shape)
-    
-#    print(len(videos), len(videos[0]), len(videos[0][0]))
-#    print(np.array(videos).shape)
-#    for vid_id, vid in enumerate(videos):
-##        for frame_id, frame in enumerate(vid):    
-#        scaler = Normalizer().fit(vid)
-#        videos[vid_id] = scaler.transform(vid)
-#    
-#            
     desFile = directory + 'data'
-#    print(np.array(videos).shape)
     with open(desFile, 'wb') as filehandle:  
         pickle.dump(videos, filehandle)
 
@@ -85,14 +67,10 @@ def collect_labels(directory):
     labels = []
     for file in os.listdir(directory):
         if not file in ['data', 'labels']:
-            flag = False
             for subDir in os.listdir(videos_path):
                 for vid in os.listdir(videos_path+subDir):
                     if vid == file:
                         labels.append(class2id[subDir])
-                        flag = True
-            if not flag:
-                print("Vid not found!")
     labels = to_1hot(labels)
     desFile = directory + 'labels'
     with open(desFile, 'wb') as filehandle:  
@@ -117,18 +95,18 @@ def test():
     desFile = "./JSON dataset/train/data"
     with open(desFile, 'rb') as filehandle:  
         print(pickle.load(filehandle)[0][1])
-                    
     
 def main():
-#    collect_and_resplit("./activity-splitted JSON dataset/", train_ratio=0.8,
-#                        val_ratio=0.1, test_ratio=0.1)
+    collect_and_resplit("./activity-splitted JSON dataset/", train_ratio=0.8,
+                        val_ratio=0.1, test_ratio=0.1)
     collect_and_reformat("./JSON dataset/train/")
     collect_and_reformat("./JSON dataset/val/")
     collect_and_reformat("./JSON dataset/test/")
-#    collect_labels("./JSON dataset/train/")
-#    collect_labels("./JSON dataset/val/")
-#    collect_labels("./JSON dataset/test/")
+    collect_labels("./JSON dataset/train/")
+    collect_labels("./JSON dataset/val/")
+    collect_labels("./JSON dataset/test/")
     print("preprocessing done!")
     test()
 
-main()
+if __name__ == '__main__':
+    main()
