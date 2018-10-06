@@ -19,26 +19,22 @@ matplotlib
 
 ## Repository Description
 The repository has 4 branches + master branch organized as:
-  - binary branch: contains the version of the project where only binary features on whether an object is detected or not are used to train the LSTM.
-  - confidence branch: the confidence percentage of the objects detected are used instead of only binary features.
-  - bounding-box branch: plus the confidence the bounding box features are also used.
-  - mask branch: plus the confidence and the ounding box features also some of mask features e.g. mask area and centroid are also used.
-  - master branch: it is just a copy of the best performing branch the bounding box branch.
+  - **binary branch**: contains the version of the project where only binary features on whether an object is detected or not are used to train the LSTM.
+  - **confidence branch**: the confidence percentage of the objects detected are used instead of only binary features.
+  - **bounding-box branch**: plus the confidence the bounding box features are also used.
+  - **mask branch**: plus the confidence and the ounding box features also some of mask features e.g. mask area and centroid are also used.
+  - **master branch**: it is just a copy of the best performing branch the bounding box branch.
 
 ## Documentation
 In this section, I write a brief description of some of the repository files/folders
 
-**lstm.py**
-- In this file, I build the LSTM network and do the training, validation and testing on the dataset.
+**lstm.py**: build the LSTM network and do the training, validation and testing on the dataset.
 
-**preprocessing.py**
-- In this file, I preprocess the data, the output of MRCNN, and put it in a format ready to be fed to the LSTM.
+**preprocessing.py**: preprocess the data, the output of MRCNN, and put it in a format ready to be fed to the LSTM.
 
-**utilities.py**
-- In this file, I write some helpful functions that are used in lstm.py
+**utilities.py**: some helpful functions that are used in lstm.py
 
-**models**
-- In this folder, I save the best performing model weights, plots and log files of the results.
+**models**: the best performing model weights, plots and log files of the results.
 
 ## Acknowledgement
 - This project is done as part of the final project for Vision and Perception course taught by prof. Fiora Pirri - Sapienza Università di Roma.
