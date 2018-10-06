@@ -1,6 +1,6 @@
 # Activity Recognition based on objects detected
 
-In this project, I use a dataset of objects detected in Activity Net's Exterior Maintenance Set of activities to train a  standard LSTM model to classify the videos of the activities correctly. 
+In this project, I use a dataset of features of objects detected in Activity Net's Exterior Maintenance Set of activities. The features are inferred using MRCNN e.g. confidence levels, bounding boxes, some feature of the masks. I use the dataset to train a standard LSTM model to classify the videos of the activities correctly. 
 
 ## Getting Started
 
@@ -16,7 +16,4 @@ Required packages (use pip install on linux):
 numpy  
 tensorflow  
 matplotlib  
-
-
-## Acknowledgments
 
