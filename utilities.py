@@ -11,29 +11,24 @@ from datetime import datetime
 import pickle
 import matplotlib.pyplot as plt
 
-
 def get_train_batches(model_obj):
     batch_size = model_obj.config.batch_size
     all_ids = []
     for i in range(len(model_obj.train_data)):
         all_ids.append(i)
     random.shuffle(all_ids)
-#    print(all_ids)
     no_of_full_batches = int(len(all_ids)/batch_size)
     batches_of_ids = []
     for i in range(no_of_full_batches):
         one_batch_ids = all_ids[i*batch_size:(i+1)*batch_size]
         batches_of_ids.append(one_batch_ids)
     random.shuffle(batches_of_ids)
-#    print(batches_of_ids)
     return batches_of_ids
 
 def train_data_iterator(model_obj):    
     batches_of_ids = get_train_batches(model_obj)
     for one_batch_of_ids in batches_of_ids:
-#        print(one_batch_of_ids)
         data, labels, sequence_length = get_batch_ph_data(model_obj, one_batch_of_ids, mode="train")
-#        print(labels)
         yield (data, labels, sequence_length)
 
 def get_batch_ph_data(model_obj, one_batch_ids, mode="train"):

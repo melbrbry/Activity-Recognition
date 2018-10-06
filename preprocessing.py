@@ -82,8 +82,6 @@ def collect_and_resplit(directory, train_ratio, val_ratio, test_ratio):
             if step >= (train_ratio+val_ratio) *no_of_videos:
                 copy(src, './dataset/test/')
             
-                    
-    
 def main():
     collect_and_resplit("./activity-splitted dataset/", train_ratio=0.8,
                         val_ratio=0.1, test_ratio=0.1)
@@ -93,6 +91,6 @@ def main():
     collect_labels("./dataset/train/")
     collect_labels("./dataset/val/")
     collect_labels("./dataset/test/")
-    print("preprocessing done!")
 
-main()
+if __name__ == '__main__':
+    main()

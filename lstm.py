@@ -5,6 +5,7 @@ import utilities as ut
 import pickle
 import random
 from tensorflow import set_random_seed
+
 set_random_seed(1)
 random.seed(2)
 np.random.seed(3)
@@ -250,7 +251,6 @@ def main():
                 best_acc_loss = val_epoch_loss
             
             best_val_loss = min(val_epoch_loss, best_val_loss)
-
 
         saver.restore(sess, "%s/weights/model" % (model.config.model_dir))
         test_accuracy = model.compute_accuracy(sess, mode='test')
