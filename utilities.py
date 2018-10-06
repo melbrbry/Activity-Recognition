@@ -20,22 +20,18 @@ def get_train_batches(model_obj):
     for i in range(len(model_obj.train_data)):
         all_ids.append(i)
     random.shuffle(all_ids)
-#    print(all_ids)
     no_of_full_batches = int(len(all_ids)/batch_size)
     batches_of_ids = []
     for i in range(no_of_full_batches):
         one_batch_ids = all_ids[i*batch_size:(i+1)*batch_size]
         batches_of_ids.append(one_batch_ids)
     random.shuffle(batches_of_ids)
-#    print(batches_of_ids)
     return batches_of_ids
 
 def train_data_iterator(model_obj):    
     batches_of_ids = get_train_batches(model_obj)
     for one_batch_of_ids in batches_of_ids:
-#        print(one_batch_of_ids)
         data, labels, sequence_length = get_batch_ph_data(model_obj, one_batch_of_ids, mode="train")
-#        print(labels)
         yield (data, labels, sequence_length)
 
 def get_batch_ph_data(model_obj, one_batch_ids, mode="train"):
@@ -67,7 +63,6 @@ def parser(file):
             rois_per_frame.append(vid[frame]['rois'])
     return ids_per_frame, confs_per_frame, rois_per_frame
             
-    
 def get_max_frames(one_batch_ids, data):
     batch = []
     sequence_length = []
@@ -90,7 +85,6 @@ def log(log_message):
         log_file.write("\n")
 
 def plot_performance(model_dir):
-
     train_accuracies = pickle.load(open("%s/metrics/train_accuracies"\
                 % model_dir, "rb"))
     val_accuracies = pickle.load(open("%s/metrics/val_accuracies"\

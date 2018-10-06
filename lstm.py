@@ -58,9 +58,6 @@ class LSTM_Model(object):
         file = './JSON dataset/train/data'
         with open(file, 'rb') as filehandle:  
             data = pickle.load(filehandle)
-#            scaler = Normalizer().fit(data)
-#            normalized_data = scaler.transform(data)
-#            self.train_data = normalized_data 
             self.train_data = data 
 
         file = './JSON dataset/train/labels'
@@ -69,9 +66,6 @@ class LSTM_Model(object):
         file = './JSON dataset/val/data'
         with open(file, 'rb') as filehandle:  
             data = pickle.load(filehandle)
-#            scaler = Normalizer().fit(data)
-#            normalized_data = scaler.transform(data)
-#            self.val_data = normalized_data
             self.val_data = data
         file = './JSON dataset/val/labels'
         with open(file, 'rb') as filehandle:  
@@ -79,9 +73,6 @@ class LSTM_Model(object):
         file = './JSON dataset/test/data'
         with open(file, 'rb') as filehandle:  
             data = pickle.load(filehandle)
-#            scaler = Normalizer().fit(data)
-#            normalized_data = scaler.transform(data)
-#            self.test_data = normalized_data
             self.test_data = data
         file = './JSON dataset/test/labels'
         with open(file, 'rb') as filehandle:  
@@ -234,7 +225,6 @@ def main():
             print("epoch: %d/%d" % (epoch+1, config.max_no_of_epochs))
             ut.log("epoch: %d/%d" % (epoch+1, config.max_no_of_epochs))
             batch_losses = model.run_epoch(sess)
-#            model.config.lr = model.config.initial_lr/(1+(epoch/30))
             epoch_loss = np.mean(batch_losses)
             val_epoch_loss = model.compute_val_loss(sess)
             print("train loss = %f | val loss = %f" % (epoch_loss, val_epoch_loss))
@@ -264,10 +254,6 @@ def main():
                 best_acc_loss = val_epoch_loss
             
             best_val_loss = min(val_epoch_loss, best_val_loss)
-#    
-#            if epoch > model.config.min_no_of_epochs and \
-#            model.early_stopping(val_epochs_losses, best_val_loss, model.config.patience):
-#                break
 
         saver.restore(sess,  "%s/weights/model" % (model.config.model_dir))
         test_accuracy = model.compute_accuracy(sess, mode='test')
