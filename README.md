@@ -42,5 +42,7 @@ In this folder, I save the best performing model weights, plots and log files of
 
 ## Acknowledgement
 - This project is done as part of the final project for Vision and Perception course taught by prof. Fiora Pirri - Sapienza Università di Roma.
-- This project is done above the work done by my teammates @voroujak. They trained MRCNN and they did the inference on the videos and generated the dataset used to train the LSTM in this project.
-- This code structure of this project is inspired by the work done by @fregu856 in CS224n_project.
+- This project is done above the work done by my teammates [Mohamad Farid](https://github.com/voroujak). They trained MRCNN and they did the inference on the videos and generated the dataset used to train the LSTM in this project.
+- This code structure of this project is inspired by the work done by [Fredrik Gustafsson](https://github.com/fregu856) in [CS224n_project](https://github.com/fregu856/CS224n_project).
+
+
